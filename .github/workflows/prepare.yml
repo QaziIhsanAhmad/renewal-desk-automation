@@ -1,0 +1,32 @@
+name: Prepare yearly Pin images
+on:
+  push:
+    branches: [main]
+    paths: [build_calendar.py, '.github/workflows/prepare.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: renewal-desk-assets
+  cancel-in-progress: false
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install Pillow==11.3.0
+      - run: mkdir -p media && python build_calendar.py
+      - run: python -m unittest test_refill.py
+      - name: Save generated calendar and images
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add calendar.json media/
+          if ! git diff --cached --quiet; then
+            git commit -m 'Prepare 365 daily Pin images and calendar'
+            git push origin HEAD:main
+          fi
