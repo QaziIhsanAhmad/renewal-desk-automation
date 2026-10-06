@@ -1,5 +1,8 @@
 name: Renewal Desk daily refill
 on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/daily.yml']
   schedule:
     - cron: '17 4 * * *'
   workflow_dispatch:
@@ -24,7 +27,6 @@ jobs:
       - run: python -m unittest test_refill.py
   refill:
     needs: verify
-    if: vars.AUTOMATION_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
