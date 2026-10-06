@@ -34,9 +34,7 @@ def run():
         print('Calendar complete. No more posts will be created.');return
     org=os.environ.get('BUFFER_ORGANIZATION_ID')
     if not org:
-        orgs=api('query { account { organizations { id } } }')['account']['organizations']
-        if len(orgs)!=1: raise RuntimeError('Set BUFFER_ORGANIZATION_ID; account has multiple organizations')
-        org=orgs[0]['id']
+        org=api('query { channel(input: {id: '+json.dumps(CHANNEL)+'}) { organizationId } }')['channel']['organizationId']
     board=os.environ.get('BUFFER_BOARD_ID')
     if not board:
         boards=api('query { channel(input: {id: '+json.dumps(CHANNEL)+'}) { metadata { ... on PinterestMetadata { boards { serviceId } } } } }')['channel']['metadata']['boards']
@@ -45,7 +43,7 @@ def run():
     posts=[];cursor=None
     query='query($input: PostsInput!, $after: String) { posts(first: 100, after: $after, input: $input) { edges { node { id dueAt status text } } pageInfo { hasNextPage endCursor } } }'
     for page in range(20):
-        result=api(query,{'input':{'organizationId':org,'filter':{'channelIds':[CHANNEL],'startDate':(now-dt.timedelta(days=1)).isoformat()}},'after':cursor})['posts']
+        result=api(query,{'input':{'organizationId':org,'filter':{'channelIds':[CHANNEL],'status':['scheduled','sent','sending','error']}},'after':cursor})['posts']
         posts.extend(e['node'] for e in result['edges'])
         if not result['pageInfo']['hasNextPage']:break
         cursor=result['pageInfo']['endCursor']
